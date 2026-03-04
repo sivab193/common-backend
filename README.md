@@ -46,6 +46,7 @@ A robust, serverless-ready Node.js & Express backend designed to power a modern 
    MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/personal-website?retryWrites=true&w=majority
    GEMINI_API_KEY=your_gemini_api_key_here
    GITHUB_TOKEN=your_optional_github_token
+   ADMIN_SECRET=your_super_secret_token_here
    ```
 
 4. Start the development server:
@@ -59,13 +60,15 @@ A robust, serverless-ready Node.js & Express backend designed to power a modern 
 ### Projects
 - `GET /api/projects` - Fetch all visible projects, sorted by newest first.
 - `GET /api/projects/all` - Fetch all projects (including hidden ones).
-- `POST /api/projects` - Manually create a new project.
-- `PATCH /api/projects/:id` - Update existing project details.
-- `PATCH /api/projects/:id/visibility` - Toggle the `visible` boolean flag.
-- `DELETE /api/projects/:id` - Delete a project.
+- `POST /api/projects` *(Protected)* - Manually create a new project.
+- `PATCH /api/projects/:id` *(Protected)* - Update existing project details.
+- `PATCH /api/projects/:id/visibility` *(Protected)* - Toggle the `visible` boolean flag.
+- `DELETE /api/projects/:id` *(Protected)* - Delete a project.
 
 ### Sync
-- `POST /api/projects/sync-github` - Triggers the automatic GitHub + Gemini synchronization pipeline. It skips existing projects (only updates timestamps) and generates rich MongoDB entries for new repositories based on their READMEs.
+- `POST /api/projects/sync-github` *(Protected)* - Triggers the automatic GitHub + Gemini synchronization pipeline.
+
+> **Protected Endpoints:** All `POST`, `PATCH`, and `DELETE` endpoints require an `Authorization` header formatted as: `Bearer <your_ADMIN_SECRET>`.
 
 ## Deployment
 
@@ -73,5 +76,5 @@ This API is configured for seamless deployment to **Vercel**.
 
 1. Push your code to a GitHub repository.
 2. Import the project into Vercel.
-3. Add your `MONGO_URI` and `GEMINI_API_KEY` to Vercel's Environment Variables settings.
+3. Add your `MONGO_URI`, `GEMINI_API_KEY`, and `ADMIN_SECRET` to Vercel's Environment Variables settings.
 4. Deploy! Vercel will automatically detect `vercel.json` and wrap the Express app in a serverless function.

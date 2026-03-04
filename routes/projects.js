@@ -5,6 +5,24 @@ import { createProject, updateProjectData } from '../models/projectModel.js';
 
 const router = express.Router();
 
+// Middleware to protect admin routes
+const requireAdmin = (req, res, next) => {
+    // Check for Authorization header: "Bearer <secret>"
+    const authHeader = req.headers.authorization;
+    const adminSecret = process.env.ADMIN_SECRET;
+
+    if (!adminSecret) {
+        console.warn("ADMIN_SECRET is not configured. Rejecting request to be safe.");
+        return res.status(500).json({ message: 'Server configuration error' });
+    }
+
+    if (!authHeader || authHeader !== `Bearer ${adminSecret}`) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    next();
+};
+
 // Helper to get projects collection
 const getCollection = () => getDB().collection('projects');
 
@@ -37,7 +55,7 @@ router.get('/all', async (req, res) => {
 });
 
 // POST /api/projects - Add new project
-router.post('/', async (req, res) => {
+router.post('/', requireAdmin, async (req, res) => {
     try {
         const project = createProject(req.body);
         const result = await getCollection().insertOne(project);
@@ -48,7 +66,7 @@ router.post('/', async (req, res) => {
 });
 
 // PATCH /api/projects/:id/visibility - Update visibility
-router.patch('/:id/visibility', async (req, res) => {
+router.patch('/:id/visibility', requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { visible } = req.body;
@@ -78,7 +96,7 @@ router.patch('/:id/visibility', async (req, res) => {
 });
 
 // PATCH /api/projects/:id - Update project info
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -105,7 +123,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // DELETE /api/projects/:id - Delete project
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -129,13 +147,13 @@ router.delete('/:id', async (req, res) => {
 
 // POST /api/projects/sync-github - Sync projects from GitHub
 import { syncGithubProjects } from '../services/githubService.js';
-router.post('/sync-github', async (req, res) => {
-  try {
-    const result = await syncGithubProjects();
-    res.json(result);
-  } catch (error) {
-    console.error('Error syncing GitHub projects:', error);
-    res.status(500).json({ message: 'Error syncing with GitHub API' });
-  }
+router.post('/sync-github', requireAdmin, async (req, res) => {
+    try {
+        const result = await syncGithubProjects();
+        res.json(result);
+    } catch (error) {
+        console.error('Error syncing GitHub projects:', error);
+        res.status(500).json({ message: 'Error syncing with GitHub API' });
+    }
 });
 export default router;
