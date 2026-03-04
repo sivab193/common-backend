@@ -17,6 +17,7 @@ export const validateProjectInput = (data) => {
     if (data.github !== undefined && data.github !== null && !isString(data.github)) errors.push('Github must be a string or null');
     if (data.demo !== undefined && data.demo !== null && !isString(data.demo)) errors.push('Demo must be a string or null');
     if (data.highlights !== undefined && !isArrayOfStrings(data.highlights)) errors.push('Highlights must be an array of strings');
+    if (data.category !== undefined && data.category !== null && !isString(data.category)) errors.push('Category must be a string or null');
     if (data.visible !== undefined && !isBoolean(data.visible)) errors.push('Visible must be a boolean');
 
     return errors;

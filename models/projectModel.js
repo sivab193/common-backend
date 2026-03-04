@@ -16,6 +16,8 @@ export const createProject = (data) => {
         technologies: normalizeArray(data.technologies),
         github: normalizeString(data.github),
         demo: normalizeString(data.demo),
+        category: normalizeString(data.category),
+        highlights: normalizeArray(data.highlights),
         visible: data.visible !== undefined ? data.visible : true,
         lastCommitTimestamp: data.lastCommitTimestamp ? new Date(data.lastCommitTimestamp) : null,
         createdAt: now,
@@ -48,6 +50,11 @@ export const updateProjectData = (data) => {
     if (data.demo !== undefined) {
         if (data.demo !== null && typeof data.demo !== 'string') throw new Error('Demo must be a string or null');
         updateDoc.demo = data.demo ? data.demo.trim() : null;
+    }
+
+    if (data.category !== undefined) {
+        if (data.category !== null && typeof data.category !== 'string') throw new Error('Category must be a string or null');
+        updateDoc.category = data.category ? data.category.trim() : null;
     }
 
     if (data.highlights !== undefined) {
