@@ -124,7 +124,7 @@ const seedDB = async () => {
         await client.connect();
         console.log('Connected to MongoDB');
 
-        const db = client.db('portfolio');
+        const db = client.db('personal-website');
         const collection = db.collection('projects');
 
         // Clear existing collection

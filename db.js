@@ -11,7 +11,7 @@ let dbConnection;
 export const connectDB = async () => {
   try {
     await client.connect();
-    dbConnection = client.db('portfolio');
+    dbConnection = client.db('personal-website');
     console.log('MongoDB connected successfully');
   } catch (error) {
     console.error('Error connecting to MongoDB:', error.message);
