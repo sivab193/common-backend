@@ -43,12 +43,26 @@ export const syncGithubProjects = async () => {
                 });
 
                 if (existing) {
-                    // Update timestamp only
-                    await collection.updateOne(
-                        { _id: existing._id },
-                        { $set: { updatedAt: new Date() } }
-                    );
-                    results.push({ name: repo.name, status: 'updated_timestamp' });
+                    const repoPushedAt = repo.pushed_at ? new Date(repo.pushed_at) : null;
+                    const existingCommit = existing.lastCommitTimestamp ? new Date(existing.lastCommitTimestamp) : null;
+
+                    const isSameCommit = repoPushedAt && existingCommit && repoPushedAt.getTime() === existingCommit.getTime();
+
+                    if (isSameCommit) {
+                        results.push({ name: repo.name, status: 'skipped_no_new_commits' });
+                    } else {
+                        // Update timestamp and commit tracking
+                        await collection.updateOne(
+                            { _id: existing._id },
+                            {
+                                $set: {
+                                    updatedAt: new Date(),
+                                    lastCommitTimestamp: repoPushedAt
+                                }
+                            }
+                        );
+                        results.push({ name: repo.name, status: 'updated_timestamp' });
+                    }
                 } else {
                     // 2. If it's a new project, fetch README and generate with Gemini
                     console.log(`New repo found: ${repo.name}. Fetching README...`);
@@ -99,7 +113,6 @@ export const syncGithubProjects = async () => {
                         generatedData.technologies.push(repo.language);
                     }
 
-                    // Construct final MongoDB mapped object
                     const projectData = {
                         title: generatedData.title,
                         description: generatedData.description,
@@ -107,7 +120,8 @@ export const syncGithubProjects = async () => {
                         github: repo.html_url,
                         demo: repo.homepage || null,
                         highlights: generatedData.highlights,
-                        visible: true
+                        visible: true,
+                        lastCommitTimestamp: repo.pushed_at
                     };
 
                     const newProject = createProject(projectData);

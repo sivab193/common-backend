@@ -16,8 +16,8 @@ export const createProject = (data) => {
         technologies: normalizeArray(data.technologies),
         github: normalizeString(data.github),
         demo: normalizeString(data.demo),
-        highlights: normalizeArray(data.highlights),
         visible: data.visible !== undefined ? data.visible : true,
+        lastCommitTimestamp: data.lastCommitTimestamp ? new Date(data.lastCommitTimestamp) : null,
         createdAt: now,
         updatedAt: now
     };
@@ -55,6 +55,10 @@ export const updateProjectData = (data) => {
             throw new Error('Highlights must be an array of strings');
         }
         updateDoc.highlights = data.highlights.map(h => h.trim());
+    }
+
+    if (data.lastCommitTimestamp !== undefined) {
+        updateDoc.lastCommitTimestamp = data.lastCommitTimestamp ? new Date(data.lastCommitTimestamp) : null;
     }
 
     return { $set: updateDoc };
