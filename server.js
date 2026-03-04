@@ -20,9 +20,11 @@ app.use('/api/projects', projectRoutes);
 const startServer = async () => {
     try {
         await connectDB();
-        app.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT}`);
-        });
+        if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
+            app.listen(PORT, () => {
+                console.log(`Server is running on port ${PORT}`);
+            });
+        }
     } catch (error) {
         console.error('Failed to start server:', error);
         process.exit(1);
@@ -30,3 +32,6 @@ const startServer = async () => {
 }
 
 startServer();
+
+// Export for Vercel Serverless Functions
+export default app;

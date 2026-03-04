@@ -126,4 +126,16 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+
+// POST /api/projects/sync-github - Sync projects from GitHub
+import { syncGithubProjects } from '../services/githubService.js';
+router.post('/sync-github', async (req, res) => {
+  try {
+    const result = await syncGithubProjects();
+    res.json(result);
+  } catch (error) {
+    console.error('Error syncing GitHub projects:', error);
+    res.status(500).json({ message: 'Error syncing with GitHub API' });
+  }
+});
 export default router;
