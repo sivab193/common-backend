@@ -1,5 +1,6 @@
 import express from 'express';
 import { ObjectId } from 'mongodb';
+import crypto from 'crypto';
 import { getDB } from '../db.js';
 import { createProject, updateProjectData } from '../models/projectModel.js';
 
@@ -16,7 +17,27 @@ const requireAdmin = (req, res, next) => {
         return res.status(500).json({ message: 'Server configuration error' });
     }
 
-    if (!authHeader || authHeader !== `Bearer ${adminSecret}`) {
+    if (!authHeader) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const expectedHeader = `Bearer ${adminSecret}`;
+
+    // Check if lengths are strictly equal to prevent timingSafeEqual throwing an error
+    if (authHeader.length !== expectedHeader.length) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    try {
+        const isValid = crypto.timingSafeEqual(
+            Buffer.from(authHeader),
+            Buffer.from(expectedHeader)
+        );
+
+        if (!isValid) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+    } catch (err) {
         return res.status(401).json({ message: 'Unauthorized' });
     }
 

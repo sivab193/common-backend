@@ -19,6 +19,18 @@ export const connectDB = async () => {
     await client.connect();
     dbConnection = client.db('personal-website');
     console.log('MongoDB connected successfully');
+
+    // Create indexes for performance
+    try {
+      const collection = dbConnection.collection('projects');
+      await collection.createIndex({ visible: 1, createdAt: -1 });
+      await collection.createIndex({ createdAt: -1 });
+      await collection.createIndex({ github: 1 });
+      await collection.createIndex({ title: 1 });
+      console.log('MongoDB indexes created/verified successfully');
+    } catch (indexError) {
+      console.warn('MongoDB index creation failed (might lack permissions):', indexError.message);
+    }
   } catch (error) {
     console.error('Error connecting to MongoDB:', error.message);
     throw error;

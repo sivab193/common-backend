@@ -31,15 +31,30 @@ export const syncGithubProjects = async () => {
 
         console.log(`Found ${repos.length} repositories.`);
 
+        const htmlUrls = repos.map(r => r.html_url);
+        const names = repos.map(r => r.name);
+
+        const existingProjects = await collection.find({
+            $or: [
+                { github: { $in: htmlUrls } },
+                { title: { $in: names } }
+            ]
+        }).toArray();
+
+        const existingProjectsByGithub = new Map();
+        const existingProjectsByName = new Map();
+
+        for (const p of existingProjects) {
+            if (p.github) existingProjectsByGithub.set(p.github, p);
+            if (p.title) existingProjectsByName.set(p.title, p);
+        }
+
+        const bulkOperations = [];
+
         for (const repo of repos) {
             try {
                 // 1. Check if project already exists
-                const existing = await collection.findOne({
-                    $or: [
-                        { github: repo.html_url },
-                        { title: repo.name }
-                    ]
-                });
+                const existing = existingProjectsByGithub.get(repo.html_url) || existingProjectsByName.get(repo.name);
 
                 if (existing) {
                     const repoPushedAt = repo.pushed_at ? new Date(repo.pushed_at) : null;
@@ -51,16 +66,18 @@ export const syncGithubProjects = async () => {
                         results.push({ name: repo.name, status: 'skipped_no_new_commits' });
                     } else {
                         // Update timestamp, commit tracking, AND set visible to true
-                        await collection.updateOne(
-                            { _id: existing._id },
-                            {
-                                $set: {
-                                    updatedAt: new Date(),
-                                    lastCommitTimestamp: repoPushedAt,
-                                    visible: true
+                        bulkOperations.push({
+                            updateOne: {
+                                filter: { _id: existing._id },
+                                update: {
+                                    $set: {
+                                        updatedAt: new Date(),
+                                        lastCommitTimestamp: repoPushedAt,
+                                        visible: true
+                                    }
                                 }
                             }
-                        );
+                        });
                         results.push({ name: repo.name, status: 'updated_timestamp' });
                     }
                 } else {
@@ -80,13 +97,21 @@ export const syncGithubProjects = async () => {
                     };
 
                     const newProject = createProject(projectData);
-                    await collection.insertOne(newProject);
+                    bulkOperations.push({
+                        insertOne: {
+                            document: newProject
+                        }
+                    });
                     results.push({ name: repo.name, status: 'inserted' });
                 }
             } catch (dbErr) {
                 console.error(`DB error for ${repo.name}:`, dbErr.message);
                 results.push({ name: repo.name, status: 'error', error: dbErr.message });
             }
+        }
+
+        if (bulkOperations.length > 0) {
+            await collection.bulkWrite(bulkOperations, { ordered: false });
         }
 
         return {
